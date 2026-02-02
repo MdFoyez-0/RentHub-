@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentHub - Find Your Perfect Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .property-card {
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .property-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .search-filter {
+            transition: all 0.3s ease;
+        }
+        
+        .search-filter:focus-within {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .rent-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .rent-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom checkbox */
+        .custom-checkbox {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .custom-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: #fff;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+        }
+
+        .custom-checkbox:hover input ~ .checkmark {
+            border-color: #3b82f6;
+        }
+
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .custom-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .custom-checkbox .checkmark:after {
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+<!-- Add this RIGHT AFTER the opening <body> tag -->
+<script>
+    // Tenant Session Protection
+    (function() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+        if (!isLoggedIn || !currentUser) {
+            alert('⚠️ Please login first');
+            window.location.href = 'Login.html';
+            return;
+        }
+
+        // Check if user is a tenant
+        if (currentUser.role !== 'tenant') {
+            alert('⛔ Access Denied. This dashboard is for tenants only.');
+            window.location.href = 'Login.html';
+            return;
+        }
+
+        // Update tenant info in header
+        document.addEventListener('DOMContentLoaded', function() {
+            const userName = document.querySelector('span.text-gray-700.font-medium');
+            if (userName && currentUser.name) {
+                userName.textContent = currentUser.name;
+            }
+        });
+    })();
+</script>
+<!-- Navigation -->
+<nav class="bg-white shadow-sm">
+    <div class="container mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg"></div>
+                <span class="text-xl font-bold text-gray-800">RentHub</span>
+            </div>
+
+            <div class="flex items-center space-x-6">
+                <a href="#" class="text-gray-600 hover:text-blue-600 font-medium">Home</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 font-medium">Properties</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 font-medium">Favorites</a>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-user text-blue-600"></i>
+                        </div>
+                        <span class="text-gray-700 font-medium" id="userName">Foyez</span>
+                    </div>
+
+                    <!-- Simple Logout Button -->
+                    <button id="logoutBtn"
+                            style="background: red; color: white; padding: 8px 16px; border-radius: 8px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">Find Your Perfect Home</h1>
+        <p class="text-gray-600">Browse through our curated selection of rental properties</p>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Left Sidebar - Filters -->
+        <div class="lg:w-1/4">
+            <div class="bg-white rounded-xl shadow-sm p-6 sticky top-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-filter text-blue-600 mr-2"></i>
+                    Search & Filter
+                </h2>
+                <p class="text-gray-600 mb-6">Find properties that match your needs:</p>
+
+                <!-- Search by title/location -->
+                <div class="mb-6 search-filter">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-search text-gray-400 mr-1"></i>
+                        Search by title or location
+                    </label>
+                    <div class="relative">
+                        <input type="text"
+                               id="search-input"
+                               placeholder="Enter location or property name..."
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Property Type Filter -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Property Type</label>
+                    <div class="space-y-3">
+                        <!-- Single column layout to ensure full visibility -->
+                        <label class="custom-checkbox flex items-center cursor-pointer w-full">
+                            <input type="checkbox" class="property-type" value="all" checked>
+                            <span class="checkmark mr-3 flex-shrink-0"></span>
+                            <span class="text-gray-700">All Types</span>
+                        </label>
+
+                        <label class="custom-checkbox flex items-center cursor-pointer w-full">
+                            <input type="checkbox" class="property-type" value="apartment">
+                            <span class="checkmark mr-3 flex-shrink-0"></span>
+                            <span class="text-gray-700">Apartment</span>
+                        </label>
+
+                        <label class="custom-checkbox flex items-center cursor-pointer w-full">
+                            <input type="checkbox" class="property-type" value="house">
+                            <span class="checkmark mr-3 flex-shrink-0"></span>
+                            <span class="text-gray-700">House</span>
+                        </label>
+
+                        <label class="custom-checkbox flex items-center cursor-pointer w-full">
+                            <input type="checkbox" class="property-type" value="condo">
+                            <span class="checkmark mr-3 flex-shrink-0"></span>
+                            <span class="text-gray-700">Condo</span>
+                        </label>
+
+                        <label class="custom-checkbox flex items-center cursor-pointer w-full">
+                            <input type="checkbox" class="property-type" value="studio">
+                            <span class="checkmark mr-3 flex-shrink-0"></span>
+                            <span class="text-gray-700">Studio</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Price Range Filter -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Max Rent</label>
+                    <div class="space-y-3">
+                        <div>
+                            <input type="range"
+                                   id="rent-range"
+                                   min="10000"
+                                   max="15000"
+                                   step="100"
+                                   value="2500"
+                                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-sm text-gray-500 mt-1">
+                                <span>10,000 TK</span>
+                                <span>12,500 TK</span>
+                                <span>15,000 TK</span>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-lg font-bold text-blue-600"> TK <span id="rent-value">15,000</span>/mo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bedrooms Filter -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Bedrooms</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="bedroom-filter px-4 py-2 rounded-lg border border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors" data-beds="all">
+                            All
+                        </button>
+                        <button class="bedroom-filter px-4 py-2 rounded-lg border border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors" data-beds="1">
+                            1 Bed
+                        </button>
+                        <button class="bedroom-filter px-4 py-2 rounded-lg border border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors" data-beds="2">
+                            2 Beds
+                        </button>
+                        <button class="bedroom-filter px-4 py-2 rounded-lg border border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors" data-beds="3">
+                            3+ Beds
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reset Filters Button -->
+                <button id="reset-filters"
+                        class="w-full py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-redo-alt mr-2"></i>
+                    Reset All Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Content - Property Listings -->
+        <div class="lg:w-3/4">
+            <!-- Results Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Available Properties</h2>
+                    <p class="text-gray-600" id="results-count">Showing 5 properties</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-600">Sort by:</span>
+                    <select id="sort-by" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="newest">Newest First</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="popular">Most Popular</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Property Cards Grid - DYNAMIC CONTENT -->
+            <div id="properties-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Properties will be loaded here dynamically from JavaScript -->
+            </div>
+            <!-- No Results Message (Hidden by default) -->
+            <div id="no-results" class="hidden text-center py-12">
+                <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-search text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">No Properties Found</h3>
+                <p class="text-gray-600 mb-6">Try adjusting your filters to find more properties</p>
+                <button id="reset-filters-2" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">
+                    Reset All Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Tenant Session Protection
+    (function() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+        // For testing, create a tenant if none exists
+        if (!isLoggedIn || !currentUser) {
+            const tenantUser = {
+                id: 'tenant_1',
+                name: 'John Tenant',
+                email: 'tenant@test.com',
+                role: 'tenant'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(tenantUser));
+            localStorage.setItem('isLoggedIn', 'true');
+            location.reload();
+            return;
+        }
+
+        // Check if user is a tenant
+        if (currentUser.role !== 'tenant') {
+            alert('⛔ Access Denied. This dashboard is for tenants only.');
+            window.location.href = 'Login.html';
+            return;
+        }
+
+        // Update tenant info in header
+        document.addEventListener('DOMContentLoaded', function() {
+            const userName = document.getElementById('userName');
+            if (userName && currentUser.name) {
+                userName.textContent = currentUser.name;
+            }
+        });
+    })();
+
+    // DOM Elements
+    const searchInput = document.getElementById('search-input');
+    const propertyTypeCheckboxes = document.querySelectorAll('.property-type');
+    const rentRange = document.getElementById('rent-range');
+    const rentValue = document.getElementById('rent-value');
+    const bedroomFilters = document.querySelectorAll('.bedroom-filter');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    const resetFiltersBtn2 = document.getElementById('reset-filters-2');
+    const sortSelect = document.getElementById('sort-by');
+    const propertiesGrid = document.getElementById('properties-grid');
+    const noResultsDiv = document.getElementById('no-results');
+    const resultsCount = document.getElementById('results-count');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Filter state
+    let filters = {
+        search: '',
+        propertyTypes: ['all'],
+        maxRent: 15000, // Default max rent in TK
+        bedrooms: 'all'
+    };
+
+    // Load approved properties from localStorage
+    function loadApprovedProperties() {
+        console.log('🔄 Loading approved properties for tenant...');
+
+        // Get ALL properties from localStorage
+        const allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+
+        // FILTER: Only show APPROVED properties
+        const approvedProperties = allProperties.filter(p => p.status === 'APPROVED');
+
+        console.log(`Found ${approvedProperties.length} approved properties out of ${allProperties.length} total`);
+
+        // Clear existing content
+        propertiesGrid.innerHTML = '';
+
+        // If no approved properties
+        if (approvedProperties.length === 0) {
+            propertiesGrid.innerHTML = `
+                <div class="col-span-2 text-center py-12">
+                    <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="fas fa-home text-gray-400 text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">No Properties Available</h3>
+                    <p class="text-gray-600 mb-6">Check back later for approved rental properties</p>
+                </div>
+            `;
+            updateResultsCount(0);
+            return;
+        }
+
+        // Create a card for each approved property
+        approvedProperties.forEach(property => {
+            // Determine icon and color based on property type
+            let typeClass = 'bg-blue-100 text-blue-700';
+            let typeIcon = 'fa-building';
+            let typeText = 'Apartment';
+
+            switch(property.type) {
+                case 'house':
+                    typeClass = 'bg-green-100 text-green-700';
+                    typeIcon = 'fa-home';
+                    typeText = 'House';
+                    break;
+                case 'condo':
+                    typeClass = 'bg-purple-100 text-purple-700';
+                    typeIcon = 'fa-building';
+                    typeText = 'Condo';
+                    break;
+                case 'studio':
+                    typeClass = 'bg-yellow-100 text-yellow-700';
+                    typeIcon = 'fa-city';
+                    typeText = 'Studio';
+                    break;
+            }
+
+            // Create property card
+            const card = document.createElement('div');
+            card.className = 'property-card bg-white rounded-xl p-6';
+            card.dataset.type = property.type;
+            card.dataset.beds = property.bedrooms;
+            card.dataset.rent = property.rent;
+            card.dataset.id = property.id;
+
+            // Format amenities for display
+            const amenities = property.amenities && Array.isArray(property.amenities)
+                ? property.amenities.slice(0, 3).map(a => `<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">${a}</span>`).join(' ')
+                : '';
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">${property.title}</h3>
+                        <div class="flex items-center mt-2 text-gray-600">
+                            <i class="fas fa-map-marker-alt text-gray-400 mr-2"></i>
+                            <span>${property.address}</span>
+                        </div>
+                    </div>
+                    <button class="text-gray-400 hover:text-red-500 transition-colors favorite-btn">
+                        <i class="far fa-heart text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-4 mb-4">
+                    <span class="px-3 py-1 ${typeClass} rounded-full text-sm font-medium">
+                        <i class="fas ${typeIcon} mr-1"></i> ${typeText}
+                    </span>
+                    <span class="text-lg font-bold text-gray-800">
+                        TK ${parseInt(property.rent).toLocaleString()}/month
+                    </span>
+                </div>
+
+                <p class="text-gray-600 mb-4 text-sm">${property.description || 'A beautiful property ready for rent.'}</p>
+
+                ${amenities ? `
+                <div class="mb-4">
+                    <div class="flex flex-wrap gap-2">
+                        ${amenities}
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+                    <div class="flex items-center space-x-4 text-gray-500">
+                        <span class="flex items-center">
+                            <i class="fas fa-bed mr-2"></i>
+                            ${property.bedrooms} Bed${property.bedrooms > 1 ? 's' : ''}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-bath mr-2"></i>
+                            ${property.bathrooms} Bath${property.bathrooms > 1 ? 's' : ''}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-expand-arrows-alt mr-2"></i>
+                            ${property.area} sqft
+                        </span>
+                    </div>
+                    <button class="rent-btn bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+                            data-property-id="${property.id}"
+                            data-property-title="${property.title}"
+                            data-property-price="${property.rent}">
+                        <i class="fas fa-handshake mr-2"></i>
+                        Request Rent
+                    </button>
+                </div>
+            `;
+
+            propertiesGrid.appendChild(card);
+        });
+
+        // Update the results count
+        updateResultsCount(approvedProperties.length);
+
+        // Attach event listeners to the new buttons
+        attachEventListeners();
+        console.log('✅ Approved properties loaded successfully');
+    }
+
+    // Attach event listeners to dynamic elements
+    function attachEventListeners() {
+        // Favorite button functionality
+        document.querySelectorAll('.favorite-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas', 'text-red-500');
+                    showNotification('Added to favorites!', 'success');
+                } else {
+                    icon.classList.remove('fas', 'text-red-500');
+                    icon.classList.add('far');
+                    showNotification('Removed from favorites', 'info');
+                }
+            });
+        });
+
+        // Rent request functionality
+        document.querySelectorAll('.rent-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const propertyId = this.dataset.propertyId;
+                const propertyTitle = this.dataset.propertyTitle;
+                const propertyPrice = this.dataset.propertyPrice;
+
+                // Show confirmation modal
+                if (confirm(`Request to rent "${propertyTitle}" for TK ${propertyPrice}/month?\n\nThe landlord will be notified of your interest.`)) {
+                    // Get current user info
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+                    // Get property details
+                    const allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+                    const property = allProperties.find(p => p.id == propertyId);
+
+                    if (!property) {
+                        showNotification('Property not found', 'error');
+                        return;
+                    }
+
+                    // Create rent request
+                    const newRequest = {
+                        id: Date.now(),
+                        tenantId: currentUser.id || 'tenant_1',
+                        tenantName: currentUser.name || 'John Tenant',
+                        tenantEmail: currentUser.email || 'tenant@test.com',
+                        propertyId: propertyId,
+                        propertyTitle: propertyTitle,
+                        propertyPrice: propertyPrice,
+                        propertyAddress: property.address,
+                        propertyLandlord: property.landlordName,
+                        propertyLandlordEmail: property.landlordEmail,
+                        status: 'PENDING',
+                        requestDate: new Date().toLocaleDateString(),
+                        requestTime: new Date().toLocaleTimeString(),
+                        createdAt: new Date().toISOString()
+                    };
+
+                    // Save to localStorage
+                    let allRequests = JSON.parse(localStorage.getItem('rent_requests') || '[]');
+                    allRequests.push(newRequest);
+                    localStorage.setItem('rent_requests', JSON.stringify(allRequests));
+
+                    console.log('✅ Rent request saved:', newRequest);
+                    console.log('Total requests:', allRequests.length);
+
+                    // Update button state
+                    this.innerHTML = '<i class="fas fa-check mr-2"></i> Request Sent!';
+                    this.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    this.classList.add('bg-green-600', 'hover:bg-green-700');
+                    this.disabled = true;
+
+                    // Show success notification
+                    showNotification('Rental request sent successfully! The landlord will contact you soon.', 'success');
+
+                    // Trigger storage event to notify landlord dashboard
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'rent_requests',
+                        newValue: JSON.stringify(allRequests)
+                    }));
+                }
+            });
+        });
+    }
+
+    // Filter properties function (for search/filters)
+    function filterProperties() {
+        const cards = document.querySelectorAll('.property-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const title = card.querySelector('h3').textContent.toLowerCase();
+            const location = card.querySelector('.fa-map-marker-alt').parentElement.textContent.toLowerCase();
+            const type = card.dataset.type;
+            const beds = parseInt(card.dataset.beds);
+            const rent = parseInt(card.dataset.rent);
+
+            let matchesSearch = true;
+            let matchesType = true;
+            let matchesRent = true;
+            let matchesBeds = true;
+
+            // Search filter
+            if (filters.search) {
+                matchesSearch = title.includes(filters.search) || location.includes(filters.search);
+            }
+
+            // Property type filter
+            if (!filters.propertyTypes.includes('all')) {
+                matchesType = filters.propertyTypes.includes(type);
+            }
+
+            // Rent filter
+            if (filters.maxRent) {
+                matchesRent = rent <= filters.maxRent;
+            }
+
+            // Bedrooms filter
+            if (filters.bedrooms !== 'all') {
+                const filterBeds = parseInt(filters.bedrooms);
+                if (filters.bedrooms === '3') {
+                    matchesBeds = beds >= 3;
+                } else {
+                    matchesBeds = beds === filterBeds;
+                }
+            }
+
+            // Show/hide card based on filters
+            if (matchesSearch && matchesType && matchesRent && matchesBeds) {
+                card.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+
+        // Show/hide no results message
+        if (visibleCount === 0) {
+            noResultsDiv.classList.remove('hidden');
+            propertiesGrid.classList.add('hidden');
+        } else {
+            noResultsDiv.classList.add('hidden');
+            propertiesGrid.classList.remove('hidden');
+        }
+
+        updateResultsCount(visibleCount);
+    }
+
+    // Update results count
+    function updateResultsCount(count) {
+        const totalCount = count !== undefined ? count : document.querySelectorAll('.property-card').length;
+        resultsCount.textContent = `Showing ${totalCount} propert${totalCount === 1 ? 'y' : 'ies'}`;
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white ${
+            type === 'success' ? 'bg-green-500' :
+            type === 'error' ? 'bg-red-500' :
+            'bg-blue-500'
+        }`;
+
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Reset filters
+    function resetFilters() {
+        // Reset search
+        searchInput.value = '';
+        filters.search = '';
+
+        // Reset property types
+        propertyTypeCheckboxes.forEach(cb => {
+            if (cb.value === 'all') {
+                cb.checked = true;
+            } else {
+                cb.checked = false;
+            }
+        });
+        filters.propertyTypes = ['all'];
+
+        // Reset rent range
+        rentRange.value = 15000;
+        rentValue.textContent = '15,000';
+        filters.maxRent = 15000;
+
+        // Reset bedrooms
+        bedroomFilters.forEach(btn => {
+            btn.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+            btn.classList.add('border-gray-300', 'hover:border-blue-500', 'hover:bg-blue-50');
+
+            if (btn.dataset.beds === 'all') {
+                btn.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+                btn.classList.remove('border-gray-300', 'hover:border-blue-500', 'hover:bg-blue-50');
+            }
+        });
+        filters.bedrooms = 'all';
+
+        // Reset sort
+        sortSelect.value = 'newest';
+
+        // Show all properties
+        filterProperties();
+    }
+
+    // Initialize dashboard
+    function init() {
+        // Load approved properties
+        loadApprovedProperties();
+
+        // Update current user info
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUser.name) {
+            const userName = document.getElementById('userName');
+            if (userName) userName.textContent = currentUser.name;
+        }
+
+        // Set up event listeners for filters
+        searchInput.addEventListener('input', function() {
+            filters.search = this.value.toLowerCase();
+            filterProperties();
+        });
+
+        rentRange.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            rentValue.textContent = value.toLocaleString();
+            filters.maxRent = value;
+            filterProperties();
+        });
+
+        propertyTypeCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const value = this.value;
+
+                if (value === 'all' && this.checked) {
+                    propertyTypeCheckboxes.forEach(cb => {
+                        if (cb.value !== 'all') {
+                            cb.checked = false;
+                        }
+                    });
+                    filters.propertyTypes = ['all'];
+                } else if (value !== 'all' && this.checked) {
+                    const allCheckbox = document.querySelector('.property-type[value="all"]');
+                    allCheckbox.checked = false;
+
+                    if (!filters.propertyTypes.includes(value)) {
+                        filters.propertyTypes.push(value);
+                    }
+
+                    const allIndex = filters.propertyTypes.indexOf('all');
+                    if (allIndex > -1) {
+                        filters.propertyTypes.splice(allIndex, 1);
+                    }
+                } else if (value !== 'all' && !this.checked) {
+                    const index = filters.propertyTypes.indexOf(value);
+                    if (index > -1) {
+                        filters.propertyTypes.splice(index, 1);
+                    }
+
+                    if (filters.propertyTypes.length === 0) {
+                        const allCheckbox = document.querySelector('.property-type[value="all"]');
+                        allCheckbox.checked = true;
+                        filters.propertyTypes = ['all'];
+                    }
+                }
+
+                filterProperties();
+            });
+        });
+
+        bedroomFilters.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const beds = this.dataset.beds;
+
+                bedroomFilters.forEach(b => {
+                    b.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+                    b.classList.add('border-gray-300', 'hover:border-blue-500', 'hover:bg-blue-50');
+                });
+
+                this.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+                this.classList.remove('border-gray-300', 'hover:border-blue-500', 'hover:bg-blue-50');
+
+                filters.bedrooms = beds;
+                filterProperties();
+            });
+        });
+
+        resetFiltersBtn.addEventListener('click', resetFilters);
+        resetFiltersBtn2.addEventListener('click', resetFilters);
+
+        sortSelect.addEventListener('change', function() {
+            // Sort functionality can be added here
+            console.log('Sort by:', this.value);
+        });
+
+        // Logout functionality
+        logoutBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Show welcome notification
+        showNotification('Welcome! Browse approved rental properties.', 'info');
+
+        // Listen for storage changes (when admin approves new properties)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'properties') {
+                console.log('🔄 Properties updated, reloading...');
+                loadApprovedProperties();
+                showNotification('New properties available!', 'info');
+            }
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            loadApprovedProperties();
+        }, 30000);
+
+        console.log('✅ Tenant Dashboard initialized');
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
+

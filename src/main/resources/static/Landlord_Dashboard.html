@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentHub - Landlord Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dashboard-card {
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+        }
+
+        .badge-approved {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-rejected {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-vacant {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-occupied {
+            background-color: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .table-row {
+            transition: background-color 0.2s ease;
+        }
+
+        .table-row:hover {
+            background-color: #f9fafb;
+        }
+
+        /* Add Property Form Animation */
+        .form-slide {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+<!-- Navigation -->
+<nav class="bg-white shadow-sm border-b">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+            <!-- Logo and Title -->
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-green-600 rounded-lg"></div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">RentHub</h1>
+                    <p class="text-xs text-gray-500">Landlord Dashboard</p>
+                </div>
+            </div>
+
+            <!-- Landlord Info and Actions -->
+            <div class="flex items-center space-x-4">
+                <button class="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg relative" id="notification-btn">
+                    <i class="fas fa-bell"></i>
+                    <span id="notification-count" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">3</span>
+                </button>
+                <button class="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <div class="flex items-center space-x-4">
+                    <!-- User Info -->
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="fas fa-user-tie text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium" id="userName">John Landlord</p>
+                            <p class="text-xs text-gray-500" id="userEmail">john@landlord.com</p>
+                        </div>
+                    </div>
+
+                    <!-- Logout Button -->
+                    <button id="logoutBtn"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="container mx-auto px-4 py-8">
+    <!-- Dashboard Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Landlord Dashboard</h1>
+            <p class="text-gray-600">Manage your properties and rental requests</p>
+        </div>
+        <button id="add-property-btn" class="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 flex items-center">
+            <i class="fas fa-plus mr-2"></i>
+            Add New Property
+        </button>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-blue-100 rounded-lg">
+                    <i class="fas fa-home text-blue-600 text-xl"></i>
+                </div>
+                <span class="text-2xl font-bold text-gray-800" id="total-properties">0</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 mb-1">Total Properties</h3>
+            <p class="text-sm text-gray-500">All your listed properties</p>
+        </div>
+
+        <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-green-100 rounded-lg">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+                <span class="text-2xl font-bold text-gray-800" id="approved-properties">0</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 mb-1">Approved</h3>
+            <p class="text-sm text-gray-500">Properties ready for rent</p>
+        </div>
+
+        <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-yellow-100 rounded-lg">
+                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                </div>
+                <span class="text-2xl font-bold text-gray-800" id="pending-properties">0</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 mb-1">Pending</h3>
+            <p class="text-sm text-gray-500">Awaiting admin approval</p>
+        </div>
+
+        <div class="dashboard-card bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-purple-100 rounded-lg">
+                    <i class="fas fa-handshake text-purple-600 text-xl"></i>
+                </div>
+                <span class="text-2xl font-bold text-gray-800" id="total-requests">0</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 mb-1">Rental Requests</h3>
+            <p class="text-sm text-gray-500">Tenant requests received</p>
+        </div>
+    </div>
+
+    <!-- My Properties Section -->
+    <div class="bg-white rounded-xl shadow-sm mb-8">
+        <!-- Section Header -->
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">My Properties</h2>
+            <p class="text-gray-600">Manage your property listings</p>
+        </div>
+
+        <!-- Properties Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Title</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Address</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Rent</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Status</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="properties-table-body">
+                <!-- Properties will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="no-properties" class="p-8 text-center hidden">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <i class="fas fa-home text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 mb-2">No Properties Listed</h3>
+            <p class="text-gray-600 mb-6">Get started by adding your first property</p>
+            <button id="add-first-property" class="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700">
+                <i class="fas fa-plus mr-2"></i>Add Your First Property
+            </button>
+        </div>
+    </div>
+
+    <!-- Rental Requests Section -->
+    <div class="bg-white rounded-xl shadow-sm">
+        <!-- Section Header -->
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Rental Requests</h2>
+            <p class="text-gray-600">Manage tenant rental requests</p>
+        </div>
+
+        <!-- Requests Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Tenant</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Property</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Request Date</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Status</th>
+                    <th class="text-left py-4 px-6 font-medium text-gray-700">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="requests-table-body">
+                <!-- Requests will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="no-requests" class="p-8 text-center hidden">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <i class="fas fa-handshake text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-700 mb-2">No Rental Requests</h3>
+            <p class="text-gray-600 mb-6">You haven't received any rental requests yet</p>
+            <button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200">
+                <i class="fas fa-share mr-2"></i>Share Your Properties
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- Add Property Modal -->
+<div id="add-property-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto form-slide">
+        <div class="p-6 border-b">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">Add New Property</h3>
+                <button id="close-modal" class="p-2 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-6">
+            <form id="property-form">
+                <div class="space-y-6">
+                    <!-- Basic Information -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-800 mb-4">Basic Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Property Title *
+                                </label>
+                                <input type="text"
+                                       id="property-title"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                       placeholder="e.g., Modern 2BHK Apartment"
+                                       required>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Property Type *
+                                </label>
+                                <select id="property-type"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        required>
+                                    <option value="">Select Type</option>
+                                    <option value="apartment">Apartment</option>
+                                    <option value="house">House</option>
+                                    <option value="condo">Condo</option>
+                                    <option value="studio">Studio</option>
+                                    <option value="villa">Villa</option>
+                                </select>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Full Address *
+                                </label>
+                                <input type="text"
+                                       id="property-address"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                       placeholder="e.g., 123 Main Street, City, State"
+                                       required>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Monthly Rent (TK) *
+                                </label>
+                                <input type="number"
+                                       id="property-rent"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                       placeholder="e.g., 12000"
+                                       min="1"
+                                       required>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Security Deposit (TK)
+                                </label>
+                                <input type="number"
+                                       id="property-deposit"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                       placeholder="e.g., 12000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Property Details -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-800 mb-4">Property Details</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Bedrooms *
+                                </label>
+                                <select id="property-bedrooms"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        required>
+                                    <option value="">Select</option>
+                                    <option value="1">1 Bed</option>
+                                    <option value="2">2 Beds</option>
+                                    <option value="3">3 Beds</option>
+                                    <option value="4">4 Beds</option>
+                                    <option value="5+">5+ Beds</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Bathrooms *
+                                </label>
+                                <select id="property-bathrooms"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        required>
+                                    <option value="">Select</option>
+                                    <option value="1">1 Bath</option>
+                                    <option value="1.5">1.5 Baths</option>
+                                    <option value="2">2 Baths</option>
+                                    <option value="2.5">2.5 Baths</option>
+                                    <option value="3+">3+ Baths</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Area (sqft) *
+                                </label>
+                                <input type="number"
+                                       id="property-area"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                       placeholder="e.g., 950"
+                                       required>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Year Built
+                                </label>
+                                <input type="number"
+                                       id="property-year"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                       placeholder="e.g., 2020">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Amenities -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-800 mb-4">Amenities</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2" value="parking">
+                                <span>Parking</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2" value="gym">
+                                <span>Gym</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2" value="pool">
+                                <span>Swimming Pool</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2" value="laundry">
+                                <span>Laundry</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2" value="ac">
+                                <span>Air Conditioning</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2" value="heating">
+                                <span>Heating</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2" value="pets">
+                                <span>Pet Friendly</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2" value="furnished">
+                                <span>Furnished</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-800 mb-4">Description</h4>
+                        <textarea id="property-description"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  rows="4"
+                                  placeholder="Describe your property in detail..."></textarea>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-end space-x-4 pt-4 border-t">
+                        <button type="button"
+                                id="cancel-property"
+                                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Submit for Approval
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Toast -->
+<div id="notification-toast" class="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg z-50 hidden">
+    <div class="flex items-center">
+        <i id="toast-icon" class="fas fa-info-circle mr-3"></i>
+        <div>
+            <p id="toast-title" class="font-medium"></p>
+            <p id="toast-message" class="text-sm opacity-90"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DOM Elements
+    const addPropertyBtn = document.getElementById('add-property-btn');
+    const addFirstPropertyBtn = document.getElementById('add-first-property');
+    const addPropertyModal = document.getElementById('add-property-modal');
+    const closeModalBtn = document.getElementById('close-modal');
+    const cancelPropertyBtn = document.getElementById('cancel-property');
+    const propertyForm = document.getElementById('property-form');
+    const propertiesTableBody = document.getElementById('properties-table-body');
+    const noPropertiesDiv = document.getElementById('no-properties');
+    const requestsTableBody = document.getElementById('requests-table-body');
+    const noRequestsDiv = document.getElementById('no-requests');
+    const notificationBtn = document.getElementById('notification-btn');
+    const notificationCount = document.getElementById('notification-count');
+    const notificationToast = document.getElementById('notification-toast');
+    const toastTitle = document.getElementById('toast-title');
+    const toastMessage = document.getElementById('toast-message');
+    const toastIcon = document.getElementById('toast-icon');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Statistics elements
+    const totalPropertiesEl = document.getElementById('total-properties');
+    const approvedPropertiesEl = document.getElementById('approved-properties');
+    const pendingPropertiesEl = document.getElementById('pending-properties');
+    const totalRequestsEl = document.getElementById('total-requests');
+
+    // Current editing property ID
+    let editingPropertyId = null;
+
+    // Show notification
+    function showNotification(title, message, type = 'info') {
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+
+        // Set icon and color based on type
+        const types = {
+            'success': { icon: 'fa-check-circle', bg: 'bg-green-500' },
+            'error': { icon: 'fa-exclamation-circle', bg: 'bg-red-500' },
+            'warning': { icon: 'fa-exclamation-triangle', bg: 'bg-yellow-500' },
+            'info': { icon: 'fa-info-circle', bg: 'bg-blue-500' }
+        };
+
+        const toastType = types[type] || types.info;
+        toastIcon.className = `fas ${toastType.icon} mr-3`;
+        notificationToast.className = `fixed bottom-4 right-4 ${toastType.bg} text-white p-4 rounded-lg shadow-lg z-50`;
+
+        // Show toast
+        notificationToast.classList.remove('hidden');
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            notificationToast.classList.add('hidden');
+        }, 3000);
+    }
+
+    // Load rental requests from localStorage
+    function loadRentalRequests() {
+        requestsTableBody.innerHTML = ''; // Clear existing rows
+
+        // Get requests from localStorage
+        const allRequests = JSON.parse(localStorage.getItem('rent_requests') || '[]');
+
+        // Get current landlord info
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const currentEmail = currentUser.email || 'john@landlord.com';
+
+        // Get ALL properties to filter requests
+        const allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+
+        // Filter requests for this landlord only
+        const landlordRequests = allRequests.filter(req => {
+            // Find the property for this request
+            const property = allProperties.find(p => p.id == req.propertyId);
+            // Return true if property belongs to this landlord
+            return property && (property.landlordEmail === currentEmail || property.landlordId === currentUser.id);
+        });
+
+        if (landlordRequests.length === 0) {
+            // Show empty state
+            noRequestsDiv.classList.remove('hidden');
+            requestsTableBody.closest('.overflow-x-auto').classList.add('hidden');
+            return;
+        }
+
+        // Hide empty state
+        noRequestsDiv.classList.add('hidden');
+        requestsTableBody.closest('.overflow-x-auto').classList.remove('hidden');
+
+        // Add each request to table
+        landlordRequests.forEach((request) => {
+            const statusClass = request.status === 'APPROVED' ? 'badge-approved' :
+                              request.status === 'REJECTED' ? 'badge-rejected' : 'badge-pending';
+            const statusIcon = request.status === 'APPROVED' ? 'fa-check-circle' :
+                             request.status === 'REJECTED' ? 'fa-times-circle' : 'fa-clock';
+            const statusText = request.status === 'APPROVED' ? 'Approved' :
+                             request.status === 'REJECTED' ? 'Rejected' : 'Pending Review';
+
+            const row = document.createElement('tr');
+            row.className = 'table-row border-b';
+            row.setAttribute('data-request-id', request.id);
+
+            row.innerHTML = `
+                <td class="py-4 px-6">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-user text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-800">${request.tenantName || 'Tenant Name'}</h4>
+                            <p class="text-sm text-gray-500">${request.tenantEmail || 'tenant@example.com'}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-4 px-6">
+                    <h4 class="font-medium text-gray-800">${request.propertyTitle || 'Property'}</h4>
+                    <p class="text-sm text-gray-500">TK ${request.propertyPrice || '0'}/month</p>
+                </td>
+                <td class="py-4 px-6">
+                    <span class="text-gray-700">${request.requestDate || new Date().toLocaleDateString()}</span>
+                    <p class="text-sm text-gray-500">${request.requestTime || new Date().toLocaleTimeString()}</p>
+                </td>
+                <td class="py-4 px-6">
+                    <span class="badge ${statusClass}">
+                        <i class="fas ${statusIcon} mr-1"></i>${statusText}
+                    </span>
+                </td>
+                <td class="py-4 px-6">
+                    <div class="flex space-x-2">
+                        ${request.status === 'PENDING' ? `
+                        <button class="approve-request-btn p-2 text-green-600 hover:bg-green-50 rounded-lg" data-request-id="${request.id}">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="reject-request-btn p-2 text-red-600 hover:bg-red-50 rounded-lg" data-request-id="${request.id}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        ` : ''}
+                        <button class="view-request-btn p-2 text-blue-600 hover:bg-blue-50 rounded-lg" data-request-id="${request.id}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${request.status === 'REJECTED' ? `
+                        <button class="reconsider-btn p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg" data-request-id="${request.id}">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                        ` : ''}
+                        ${request.status === 'APPROVED' ? `
+                        <button class="message-tenant-btn p-2 text-purple-600 hover:bg-purple-50 rounded-lg" data-request-id="${request.id}">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                </td>
+            `;
+
+            requestsTableBody.appendChild(row);
+        });
+    }
+
+
+    // Load landlord's real properties from localStorage
+    function loadLandlordProperties() {
+        console.log('👨‍💼 Loading landlord properties from localStorage...');
+
+        // Get current landlord info
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const currentEmail = currentUser.email || 'john@landlord.com';
+
+        // Get ALL properties from localStorage
+        const allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+
+        // Filter: Only show properties owned by this landlord
+        const landlordProperties = allProperties.filter(p =>
+            p.landlordEmail === currentEmail ||
+            p.landlordId === currentUser.id
+        );
+
+        console.log(`Found ${landlordProperties.length} properties for ${currentEmail}`);
+
+        // Clear table
+        propertiesTableBody.innerHTML = '';
+
+        // If no properties, show empty state
+        if (landlordProperties.length === 0) {
+            noPropertiesDiv.classList.remove('hidden');
+            propertiesTableBody.closest('.overflow-x-auto').classList.add('hidden');
+            return;
+        }
+
+        // Hide empty state
+        noPropertiesDiv.classList.add('hidden');
+        propertiesTableBody.closest('.overflow-x-auto').classList.remove('hidden');
+
+        // Add each property to table
+        landlordProperties.forEach(property => {
+            // Determine icon and color based on property type
+            let iconClass = 'fas fa-building text-blue-600';
+            let bgClass = 'bg-blue-100';
+
+            switch(property.type) {
+                case 'house':
+                    iconClass = 'fas fa-home text-green-600';
+                    bgClass = 'bg-green-100';
+                    break;
+                case 'condo':
+                    iconClass = 'fas fa-building text-purple-600';
+                    bgClass = 'bg-purple-100';
+                    break;
+                case 'studio':
+                    iconClass = 'fas fa-city text-yellow-600';
+                    bgClass = 'bg-yellow-100';
+                    break;
+            }
+
+            // Determine status badge
+            let statusClass = 'badge-pending';
+            let statusIcon = 'fa-clock';
+            let statusText = 'Pending';
+
+            if (property.status === 'APPROVED') {
+                statusClass = 'badge-approved';
+                statusIcon = 'fa-check-circle';
+                statusText = 'Approved';
+            } else if (property.status === 'REJECTED') {
+                statusClass = 'badge-rejected';
+                statusIcon = 'fa-times-circle';
+                statusText = 'Rejected';
+            }
+
+            // Create table row
+            const row = document.createElement('tr');
+            row.className = 'table-row border-b';
+            row.dataset.id = property.id;
+
+            row.innerHTML = `
+                <td class="py-4 px-6">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 ${bgClass} rounded-lg flex items-center justify-center mr-3">
+                            <i class="${iconClass}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-800">${property.title}</h4>
+                            <p class="text-sm text-gray-500">${property.bedrooms} Bed • ${property.bathrooms} Bath • ${property.area} sqft</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-4 px-6">
+                    <span class="text-gray-700">${property.address}</span>
+                </td>
+                <td class="py-4 px-6">
+                    <span class="font-bold text-gray-800">TK ${parseInt(property.rent).toLocaleString()}/month</span>
+                </td>
+                <td class="py-4 px-6">
+                    <span class="badge ${statusClass}">
+                        <i class="fas ${statusIcon} mr-1"></i>
+                        ${statusText}
+                    </span>
+                </td>
+                <td class="py-4 px-6">
+                    <div class="flex space-x-2">
+                        <button class="view-property-btn p-2 text-blue-600 hover:bg-blue-50 rounded-lg" data-id="${property.id}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="edit-property-btn p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg" data-id="${property.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-property-btn p-2 text-red-600 hover:bg-red-50 rounded-lg" data-id="${property.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+
+            propertiesTableBody.appendChild(row);
+        });
+
+        // Update statistics
+        updateLandlordStatistics();
+    }
+
+    function updateLandlordStatistics() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const currentEmail = currentUser.email || 'john@landlord.com';
+
+        // Get ALL properties
+        const allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+
+        // Filter landlord's properties
+        const landlordProperties = allProperties.filter(p =>
+            p.landlordEmail === currentEmail ||
+            p.landlordId === currentUser.id
+        );
+
+        // Count by status
+        const totalCount = landlordProperties.length;
+        const approvedCount = landlordProperties.filter(p => p.status === 'APPROVED').length;
+        const pendingCount = landlordProperties.filter(p => p.status === 'PENDING').length;
+
+        // Update UI
+        totalPropertiesEl.textContent = totalCount;
+        approvedPropertiesEl.textContent = approvedCount;
+        pendingPropertiesEl.textContent = pendingCount;
+
+        // Count rental requests for this landlord
+        const allRequests = JSON.parse(localStorage.getItem('rent_requests') || '[]');
+        const landlordRequests = allRequests.filter(req => {
+            // Find if request is for this landlord's property
+            const property = allProperties.find(p => p.id == req.propertyId);
+            return property && (property.landlordEmail === currentEmail || property.landlordId === currentUser.id);
+        });
+
+        totalRequestsEl.textContent = landlordRequests.length;
+
+        // Update notification count
+        const pendingRequests = landlordRequests.filter(req => req.status === 'PENDING');
+        notificationCount.textContent = pendingRequests.length;
+
+        if (pendingRequests.length > 0) {
+            notificationCount.classList.remove('hidden');
+        } else {
+            notificationCount.classList.add('hidden');
+        }
+    }
+
+    // Show add property modal
+    function showAddPropertyModal(propertyId = null) {
+        editingPropertyId = propertyId;
+        addPropertyModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        // Reset form if not editing
+        if (!propertyId) {
+            propertyForm.reset();
+        }
+    }
+
+    // Hide add property modal
+    function hideAddPropertyModal() {
+        addPropertyModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        propertyForm.reset();
+        editingPropertyId = null;
+    }
+
+    // Add property form submission
+    propertyForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Get form values
+        const title = document.getElementById('property-title').value;
+        const type = document.getElementById('property-type').value;
+        const address = document.getElementById('property-address').value;
+        const rent = document.getElementById('property-rent').value;
+        const bedrooms = document.getElementById('property-bedrooms').value;
+        const bathrooms = document.getElementById('property-bathrooms').value;
+        const area = document.getElementById('property-area').value;
+        const description = document.getElementById('property-description').value;
+
+        // Validate form
+        if (!title || !type || !address || !rent || !bedrooms || !bathrooms || !area) {
+            showNotification('Validation Error', 'Please fill all required fields', 'error');
+            return;
+        }
+
+        // Get current user info
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+        // Get amenities from checkboxes
+        const amenitiesCheckboxes = document.querySelectorAll('#property-form input[type="checkbox"]:checked');
+        const amenities = Array.from(amenitiesCheckboxes).map(cb => cb.value);
+
+        let allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+
+        if (editingPropertyId) {
+            // Update existing property
+            const propertyIndex = allProperties.findIndex(p => p.id == editingPropertyId);
+            if (propertyIndex !== -1) {
+                allProperties[propertyIndex] = {
+                    ...allProperties[propertyIndex],
+                    title: title,
+                    type: type,
+                    address: address,
+                    rent: rent,
+                    bedrooms: bedrooms,
+                    bathrooms: bathrooms,
+                    area: area,
+                    description: description || '',
+                    amenities: amenities
+                };
+                showNotification('Property Updated', 'Your property has been updated', 'success');
+            }
+        } else {
+            // Create new property
+            const propertyId = Date.now();
+            const newProperty = {
+                id: propertyId,
+                title: title,
+                type: type,
+                address: address,
+                rent: rent,
+                bedrooms: bedrooms,
+                bathrooms: bathrooms,
+                area: area,
+                description: description || '',
+                amenities: amenities,
+                landlordId: currentUser.id || 'landlord_1',
+                landlordName: currentUser.name || 'John Landlord',
+                landlordEmail: currentUser.email || 'john@landlord.com',
+                status: 'PENDING',
+                createdAt: new Date().toISOString(),
+                approved: false
+            };
+            allProperties.push(newProperty);
+            showNotification('Property Submitted', 'Your property has been submitted for admin approval', 'success');
+        }
+
+        // Save to localStorage
+        localStorage.setItem('properties', JSON.stringify(allProperties));
+
+        // Hide modal and reset form
+        hideAddPropertyModal();
+
+        // Reload properties
+        loadLandlordProperties();
+    });
+
+    // Handle property actions
+    document.addEventListener('click', function(e) {
+        // Delete property
+        if (e.target.closest('.delete-property-btn')) {
+            const row = e.target.closest('tr');
+            const propertyId = row.dataset.id;
+            const propertyName = row.querySelector('h4').textContent;
+
+            if (confirm(`Are you sure you want to delete "${propertyName}"?`)) {
+                // Remove from localStorage
+                let allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+                allProperties = allProperties.filter(p => p.id != propertyId);
+                localStorage.setItem('properties', JSON.stringify(allProperties));
+
+                // Remove from UI
+                row.remove();
+                showNotification('Property Deleted', `${propertyName} has been removed`, 'info');
+                updateLandlordStatistics();
+            }
+        }
+
+        // Edit property
+        if (e.target.closest('.edit-property-btn')) {
+            const row = e.target.closest('tr');
+            const propertyId = row.dataset.id;
+            const propertyName = row.querySelector('h4').textContent;
+
+            // Get property data from localStorage
+            const allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const property = allProperties.find(p => p.id == propertyId);
+
+            if (property) {
+                // Populate form with property data
+                document.getElementById('property-title').value = property.title;
+                document.getElementById('property-type').value = property.type;
+                document.getElementById('property-address').value = property.address;
+                document.getElementById('property-rent').value = property.rent;
+                document.getElementById('property-bedrooms').value = property.bedrooms;
+                document.getElementById('property-bathrooms').value = property.bathrooms;
+                document.getElementById('property-area').value = property.area;
+                document.getElementById('property-description').value = property.description || '';
+
+                // Check amenities checkboxes
+                const checkboxes = document.querySelectorAll('#property-form input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    cb.checked = property.amenities && property.amenities.includes(cb.value);
+                });
+
+                // Show modal for editing
+                showAddPropertyModal(propertyId);
+                showNotification('Edit Property', `Editing ${propertyName}...`, 'info');
+            }
+        }
+
+        // View property
+        if (e.target.closest('.view-property-btn')) {
+            const row = e.target.closest('tr');
+            const propertyId = row.dataset.id;
+
+            // Get property data from localStorage
+            const allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+            const property = allProperties.find(p => p.id == propertyId);
+
+            if (property) {
+                const amenities = property.amenities ? property.amenities.join(', ') : 'None';
+                alert(`Property Details:\n\nName: ${property.title}\nType: ${property.type}\nAddress: ${property.address}\nRent: TK ${property.rent}/month\nBedrooms: ${property.bedrooms}\nBathrooms: ${property.bathrooms}\nArea: ${property.area} sqft\nStatus: ${property.status}\nAmenities: ${amenities}\nDescription: ${property.description || 'No description'}`);
+            }
+        }
+
+        // Handle rental request actions
+        const requestRow = e.target.closest('tr[data-request-id]');
+        if (requestRow) {
+            const requestId = requestRow.dataset.requestId;
+            const tenantName = requestRow.querySelector('h4').textContent;
+            const propertyName = requestRow.querySelector('td:nth-child(2) h4').textContent;
+
+            // Approve request
+            if (e.target.closest('.approve-request-btn')) {
+                const statusBadge = requestRow.querySelector('.badge');
+                statusBadge.className = 'badge badge-approved';
+                statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Approved';
+
+                // Remove action buttons and add new ones
+                const actionCell = requestRow.querySelector('td:last-child');
+                actionCell.innerHTML = `
+                    <div class="flex space-x-2">
+                        <button class="view-request-btn p-2 text-blue-600 hover:bg-blue-50 rounded-lg" data-request-id="${requestId}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="message-tenant-btn p-2 text-purple-600 hover:bg-purple-50 rounded-lg" data-request-id="${requestId}">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                    </div>
+                `;
+
+                showNotification('Request Approved', `You approved ${tenantName}'s request for ${propertyName}`, 'success');
+                // Update request status in localStorage
+                let allRequests = JSON.parse(localStorage.getItem('rent_requests') || '[]');
+                const requestIndex = allRequests.findIndex(req => req.id == requestId);
+                if (requestIndex !== -1) {
+                    allRequests[requestIndex].status = 'APPROVED';
+                    localStorage.setItem('rent_requests', JSON.stringify(allRequests));
+                }
+                updateLandlordStatistics();
+            }
+
+            // Reject request
+            if (e.target.closest('.reject-request-btn')) {
+                const statusBadge = requestRow.querySelector('.badge');
+                statusBadge.className = 'badge badge-rejected';
+                statusBadge.innerHTML = '<i class="fas fa-times-circle mr-1"></i>Rejected';
+
+                // Remove action buttons and add new ones
+                const actionCell = requestRow.querySelector('td:last-child');
+                actionCell.innerHTML = `
+                    <div class="flex space-x-2">
+                        <button class="view-request-btn p-2 text-blue-600 hover:bg-blue-50 rounded-lg" data-request-id="${requestId}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="reconsider-btn p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg" data-request-id="${requestId}">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                `;
+
+                showNotification('Request Rejected', `You rejected ${tenantName}'s request for ${propertyName}`, 'warning');
+                // Update request status in localStorage
+                let allRequests = JSON.parse(localStorage.getItem('rent_requests') || '[]');
+                const requestIndex = allRequests.findIndex(req => req.id == requestId);
+                if (requestIndex !== -1) {
+                    allRequests[requestIndex].status = 'REJECTED';
+                    localStorage.setItem('rent_requests', JSON.stringify(allRequests));
+                }
+                updateLandlordStatistics();
+            }
+
+            // Reconsider request
+            if (e.target.closest('.reconsider-btn')) {
+                const statusBadge = requestRow.querySelector('.badge');
+                statusBadge.className = 'badge badge-pending';
+                statusBadge.innerHTML = '<i class="fas fa-clock mr-1"></i>Pending Review';
+
+                // Restore original action buttons
+                const actionCell = requestRow.querySelector('td:last-child');
+                actionCell.innerHTML = `
+                    <div class="flex space-x-2">
+                        <button class="approve-request-btn p-2 text-green-600 hover:bg-green-50 rounded-lg" data-request-id="${requestId}">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="reject-request-btn p-2 text-red-600 hover:bg-red-50 rounded-lg" data-request-id="${requestId}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <button class="view-request-btn p-2 text-blue-600 hover:bg-blue-50 rounded-lg" data-request-id="${requestId}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                `;
+
+                showNotification('Request Reconsidered', `${tenantName}'s request is now pending review`, 'info');
+                // Update request status in localStorage
+                let allRequests = JSON.parse(localStorage.getItem('rent_requests') || '[]');
+                const requestIndex = allRequests.findIndex(req => req.id == requestId);
+                if (requestIndex !== -1) {
+                    allRequests[requestIndex].status = 'PENDING';
+                    localStorage.setItem('rent_requests', JSON.stringify(allRequests));
+                }
+                updateLandlordStatistics();
+            }
+
+            // View request details
+            if (e.target.closest('.view-request-btn')) {
+                alert(`Rental Request Details:\n\nTenant: ${tenantName}\nProperty: ${propertyName}\nStatus: ${requestRow.querySelector('.badge').textContent.trim()}`);
+            }
+
+            // Message tenant
+            if (e.target.closest('.message-tenant-btn')) {
+                alert(`Messaging ${tenantName} about ${propertyName}...\n\nThis would open a chat interface in a real application.`);
+            }
+        }
+    });
+
+    // Event Listeners
+    addPropertyBtn.addEventListener('click', () => showAddPropertyModal());
+    addFirstPropertyBtn.addEventListener('click', () => showAddPropertyModal());
+    closeModalBtn.addEventListener('click', hideAddPropertyModal);
+    cancelPropertyBtn.addEventListener('click', hideAddPropertyModal);
+
+    // Close modal when clicking outside
+    addPropertyModal.addEventListener('click', function(e) {
+        if (e.target === addPropertyModal) {
+            hideAddPropertyModal();
+        }
+    });
+
+    // Logout functionality
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear login data
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('currentUser');
+
+                // Redirect to home page
+                window.location.href = 'index.html';
+            }
+        });
+    }
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if user is logged in
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+        // For testing, if no user is logged in, create a demo landlord
+        if (!isLoggedIn) {
+            const demoLandlord = {
+                id: 'landlord_1',
+                name: 'John Landlord',
+                email: 'john@landlord.com',
+                role: 'landlord'
+            };
+            localStorage.setItem('currentUser', JSON.stringify(demoLandlord));
+            localStorage.setItem('isLoggedIn', 'true');
+            currentUser = demoLandlord;
+        }
+
+        if (currentUser.role !== 'landlord') {
+            alert('Please login as a landlord to access this dashboard.');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Update user info in header
+        if (currentUser.name) {
+            document.getElementById('userName').textContent = currentUser.name;
+        }
+        if (currentUser.email) {
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        // Initialize sample data if empty
+        initializeSampleData();
+
+        // Load data
+        loadLandlordProperties();
+        loadRentalRequests();
+
+        showNotification('Welcome Landlord', 'Manage your properties and rental requests', 'info');
+
+        // Add auto-refresh for localStorage changes
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'properties' || e.key === 'rent_requests') {
+                console.log('Data changed, reloading...');
+                loadLandlordProperties();
+                loadRentalRequests();
+            }
+        });
+    });
+
+    // Initialize sample data
+    function initializeSampleData() {
+        // Check if properties exist in localStorage
+        let allProperties = JSON.parse(localStorage.getItem('properties') || '[]');
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const currentEmail = currentUser.email || 'john@landlord.com';
+
+        if (allProperties.length === 0) {
+            // Create sample properties
+            const sampleProperties = [
+                {
+                    id: 1,
+                    title: 'Modern 2BHK Apartment',
+                    type: 'apartment',
+                    address: '123 Main St. Downtown',
+                    rent: '12000',
+                    bedrooms: '2',
+                    bathrooms: '2',
+                    area: '950',
+                    description: 'A modern apartment in downtown area',
+                    amenities: ['parking', 'ac', 'laundry'],
+                    landlordId: currentUser.id || 'landlord_1',
+                    landlordName: currentUser.name || 'John Landlord',
+                    landlordEmail: currentEmail,
+                    status: 'APPROVED',
+                    createdAt: new Date().toISOString(),
+                    approved: true
+                },
+                {
+                    id: 2,
+                    title: 'Cozy Studio',
+                    type: 'studio',
+                    address: '456 Oak Ave. Suburb',
+                    rent: '8000',
+                    bedrooms: '1',
+                    bathrooms: '1',
+                    area: '550',
+                    description: 'A cozy studio in quiet suburb',
+                    amenities: ['parking'],
+                    landlordId: currentUser.id || 'landlord_1',
+                    landlordName: currentUser.name || 'John Landlord',
+                    landlordEmail: currentEmail,
+                    status: 'PENDING',
+                    createdAt: new Date().toISOString(),
+                    approved: false
+                },
+                {
+                    id: 3,
+                    title: 'Luxury Condo',
+                    type: 'condo',
+                    address: '789 Skyline Blvd',
+                    rent: '20000',
+                    bedrooms: '2',
+                    bathrooms: '2.5',
+                    area: '1100',
+                    description: 'Luxury condo with great view',
+                    amenities: ['parking', 'gym', 'pool', 'ac'],
+                    landlordId: currentUser.id || 'landlord_1',
+                    landlordName: currentUser.name || 'John Landlord',
+                    landlordEmail: currentEmail,
+                    status: 'APPROVED',
+                    createdAt: new Date().toISOString(),
+                    approved: true
+                }
+            ];
+
+            localStorage.setItem('properties', JSON.stringify(sampleProperties));
+        }
+
+        // Check if rental requests exist
+        let allRequests = JSON.parse(localStorage.getItem('rent_requests') || '[]');
+        if (allRequests.length === 0) {
+            // Create sample rental requests
+            const sampleRequests = [
+                {
+                    id: 1,
+                    tenantName: 'Jane Tenant',
+                    tenantEmail: 'jane@tenant.com',
+                    propertyId: 1,
+                    propertyTitle: 'Modern 2BHK Apartment',
+                    propertyPrice: '12000',
+                    requestDate: '2023-10-25',
+                    requestTime: '14:30',
+                    status: 'PENDING'
+                },
+                {
+                    id: 2,
+                    tenantName: 'Mike Renter',
+                    tenantEmail: 'mike@renter.com',
+                    propertyId: 2,
+                    propertyTitle: 'Cozy Studio',
+                    propertyPrice: '8000',
+                    requestDate: '2023-10-24',
+                    requestTime: '10:15',
+                    status: 'APPROVED'
+                },
+                {
+                    id: 3,
+                    tenantName: 'Sarah Applicant',
+                    tenantEmail: 'sarah@applicant.com',
+                    propertyId: 3,
+                    propertyTitle: 'Luxury Condo',
+                    propertyPrice: '20000',
+                    requestDate: '2023-10-23',
+                    requestTime: '16:45',
+                    status: 'REJECTED'
+                }
+            ];
+
+            localStorage.setItem('rent_requests', JSON.stringify(sampleRequests));
+        }
+    }
+</script>
+
+</body>
+</html>
+
