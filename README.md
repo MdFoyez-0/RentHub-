@@ -6,38 +6,15 @@ The system allows property listing, rental requests, and administrative moderati
 
 This project demonstrates Spring Boot backend development, RESTful APIs, and static frontend integration using HTML, CSS, and JavaScript.
 
-Features
-User Roles
-
-Landlord
-
-Add and manage rental properties
-
-View tenant rental requests
-
-Tenant
-
-Browse available rental properties
-
-Submit rental requests
-
-Admin
-
-Manage users
-
-Moderate property listings
-
-Core Functionality
-
-Role-based access
-
-Property listing and management
-
-Rental request workflow
-
-REST API architecture
-
-MySQL database integration
+## Features
+- **👨‍💼 Landlord Dashboard**: Add/edit properties, manage rental requests, view statistics
+- **👤 Tenant Dashboard**: Browse approved properties, submit rental requests, favorite listings
+- **🔧 Admin Dashboard**: Approve/reject properties, manage users, system oversight
+- **🔐 Role-based Authentication**: Secure login for each user type
+- **🏠 Property Management**: Full CRUD operations for property listings
+- **📋 Rental Requests**: Submit, approve, or reject rental applications
+- **📊 Real-time Statistics**: Interactive dashboards with live data
+- **📱 Responsive Design**: Works on desktop, tablet, and mobile
 
 Tech Stack
 Backend
