@@ -161,13 +161,6 @@ LandLord-Panel
 
 
 
-
-
-Example usage in README:
-
-![Login Page](screenshots/login.png)
-![Dashboard](screenshots/dashboard.png)
-
 Future Improvements
 
 JWT authentication
